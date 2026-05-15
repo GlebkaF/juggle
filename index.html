@@ -1,291 +1,55 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Juggle Tracker</title>
-  <style>
-    :root {
-      --bg: #0b1020;
-      --panel: #121a2b;
-      --panel2: #182338;
-      --line: #28364f;
-      --text: #f8fafc;
-      --muted: #94a3b8;
-      --accent: #f59e0b;
-      --accent2: #38bdf8;
-      --good: #22c55e;
-      --radius: 20px;
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      background:
-        radial-gradient(circle at top left, rgba(56, 189, 248, .16), transparent 34rem),
-        radial-gradient(circle at top right, rgba(245, 158, 11, .13), transparent 30rem),
-        var(--bg);
-      color: var(--text);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-
-    .page {
-      max-width: 1280px;
-      margin: 0 auto;
-      padding: 32px 20px 56px;
-    }
-
-    header {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 20px;
-      align-items: end;
-      margin-bottom: 24px;
-    }
-
-    h1 {
-      margin: 0 0 8px;
-      font-size: clamp(34px, 6vw, 64px);
-      line-height: .92;
-      letter-spacing: -.06em;
-    }
-
-    .subtitle {
-      max-width: 760px;
-      color: var(--muted);
-      line-height: 1.5;
-      font-size: 15px;
-    }
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(3, 110px);
-      gap: 10px;
-    }
-
-    .stat {
-      background: rgba(18, 26, 43, .82);
-      border: 1px solid rgba(255,255,255,.07);
-      border-radius: 18px;
-      padding: 12px;
-      box-shadow: 0 18px 40px rgba(0,0,0,.2);
-    }
-
-    .stat strong { display: block; font-size: 26px; }
-    .stat span { color: var(--muted); font-size: 12px; }
-
-    .toolbar {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      background: rgba(18, 26, 43, .82);
-      border: 1px solid rgba(255,255,255,.07);
-      border-radius: var(--radius);
-      padding: 14px;
-      margin-bottom: 16px;
-    }
-
-    .filters { display: flex; gap: 8px; flex-wrap: wrap; }
-
-    button {
-      border: 1px solid rgba(255,255,255,.08);
-      background: var(--panel2);
-      color: var(--text);
-      border-radius: 999px;
-      padding: 9px 13px;
-      cursor: pointer;
-      font: inherit;
-      font-size: 13px;
-    }
-
-    button.active {
-      background: var(--accent);
-      border-color: transparent;
-      color: #111827;
-    }
-
-    button.secondary.active {
-      background: var(--accent2);
-    }
-
-    input {
-      min-width: min(100%, 260px);
-      background: var(--panel2);
-      color: var(--text);
-      border: 1px solid rgba(255,255,255,.08);
-      border-radius: 999px;
-      padding: 11px 14px;
-      outline: none;
-      font: inherit;
-      font-size: 14px;
-    }
-
-    .legend {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-      gap: 8px;
-      margin-bottom: 16px;
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    .legend div {
-      background: rgba(18, 26, 43, .58);
-      border: 1px solid rgba(255,255,255,.06);
-      border-radius: 14px;
-      padding: 10px 12px;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 14px;
-    }
-
-    .card {
-      background: linear-gradient(180deg, rgba(24,35,56,.96), rgba(16,24,39,.96));
-      border: 1px solid rgba(255,255,255,.075);
-      border-radius: var(--radius);
-      padding: 16px;
-      min-height: 230px;
-      box-shadow: 0 16px 34px rgba(0,0,0,.18);
-    }
-
-    .card.done { border-color: rgba(34,197,94,.45); }
-
-    .card-top {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: flex-start;
-      margin-bottom: 10px;
-    }
-
-    .branch {
-      font-size: 11px;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: .11em;
-      margin-bottom: 6px;
-    }
-
-    .title {
-      font-size: 20px;
-      line-height: 1.1;
-      font-weight: 750;
-      letter-spacing: -.025em;
-    }
-
-    .type {
-      flex: 0 0 auto;
-      font-size: 11px;
-      padding: 5px 8px;
-      border-radius: 999px;
-      background: rgba(56, 189, 248, .16);
-      color: #bae6fd;
-      border: 1px solid rgba(56, 189, 248, .2);
-    }
-
-    .description {
-      color: #cbd5e1;
-      font-size: 13px;
-      line-height: 1.45;
-      min-height: 38px;
-      margin-bottom: 10px;
-    }
-
-    .deps {
-      color: var(--muted);
-      font-size: 12px;
-      min-height: 18px;
-      margin-bottom: 10px;
-    }
-
-    .deps b { color: #e2e8f0; font-weight: 600; }
-
-    .lane {
-      margin-top: 9px;
-    }
-
-    .lane-label {
-      color: var(--muted);
-      font-size: 12px;
-      margin-bottom: 5px;
-    }
-
-    .stars {
-      display: flex;
-      gap: 7px;
-      align-items: center;
-    }
-
-    .star {
-      width: 32px;
-      height: 32px;
-      border-radius: 10px;
-      background: rgba(255,255,255,.06);
-      border: 1px solid rgba(255,255,255,.08);
-      display: grid;
-      place-items: center;
-      cursor: pointer;
-      color: rgba(255,255,255,.28);
-      user-select: none;
-      transition: .12s ease;
-    }
-
-    .star:hover { transform: translateY(-1px); }
-    .star.active { background: var(--accent); border-color: transparent; color: #111827; }
-
-    .tree {
-      display: grid;
-      gap: 12px;
-    }
-
-    .tree-family {
-      background: rgba(18, 26, 43, .82);
-      border: 1px solid rgba(255,255,255,.07);
-      border-radius: var(--radius);
-      padding: 16px;
-    }
-
-    .tree-family h2 { margin: 0 0 10px; font-size: 18px; }
-
-    .nodes {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
-    .node {
-      padding: 9px 11px;
-      border-radius: 999px;
-      background: rgba(255,255,255,.06);
-      border: 1px solid rgba(255,255,255,.08);
-      color: #e2e8f0;
-      font-size: 13px;
-    }
-
-    .node.done { background: rgba(34,197,94,.18); border-color: rgba(34,197,94,.32); }
-    .arrow { color: var(--muted); }
-
-    @media (max-width: 760px) {
-      header { grid-template-columns: 1fr; }
-      .stats { grid-template-columns: repeat(3, 1fr); }
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Juggle Tracker</title>
+<style>
+:root{--bg:#070d18;--card:#111a2b;--card2:#172238;--line:rgba(148,163,184,.18);--text:#f8fafc;--muted:#94a3b8;--soft:#cbd5e1;--accent:#f59e0b;--blue:#38bdf8;--green:#22c55e;--radius:22px}*{box-sizing:border-box}html{color-scheme:dark}body{margin:0;background:radial-gradient(circle at 10% -10%,rgba(56,189,248,.2),transparent 28rem),radial-gradient(circle at 100% 0,rgba(245,158,11,.16),transparent 26rem),var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.page{width:min(100%,1120px);margin:0 auto;padding:18px 12px 88px}.hero{padding:6px 2px 14px}h1{margin:0 0 8px;font-size:42px;line-height:.9;letter-spacing:-.07em}.subtitle{color:var(--muted);font-size:14px;line-height:1.45;max-width:680px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}.stat{background:rgba(17,26,43,.78);border:1px solid var(--line);border-radius:18px;padding:10px 11px}.stat strong{display:block;font-size:22px;line-height:1}.stat span{color:var(--muted);font-size:11px}.topbar{display:grid;gap:10px;margin:8px 0 14px}.search{width:100%;height:44px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--text);padding:0 14px;font:inherit;font-size:15px;outline:0}.scroll-chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}.scroll-chips::-webkit-scrollbar{display:none}button{min-height:38px;border:1px solid var(--line);border-radius:999px;background:var(--card2);color:var(--soft);padding:8px 12px;font:inherit;font-size:13px;white-space:nowrap}button.active{background:var(--accent);color:#111827;border-color:transparent}.modes{display:grid;grid-template-columns:1fr 1fr;gap:8px}.modes button.active{background:var(--blue)}.legend{display:grid;grid-template-columns:1fr;gap:7px;margin:10px 0 14px;color:var(--muted);font-size:12px}.legend div{border:1px solid var(--line);background:rgba(17,26,43,.55);border-radius:14px;padding:8px 10px}.grid{display:grid;grid-template-columns:1fr;gap:12px}.card{--family:#64748b;position:relative;overflow:hidden;background:linear-gradient(180deg,rgba(23,34,56,.98),rgba(12,18,30,.98));border:1px solid var(--line);border-radius:var(--radius);padding:14px 14px 13px;box-shadow:0 16px 32px rgba(0,0,0,.2)}.card:before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:var(--family)}.card.done{border-color:rgba(34,197,94,.48)}.head{display:grid;grid-template-columns:1fr 54px;gap:10px;align-items:start}.branch{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.14em;margin-bottom:5px}.name{font-size:20px;line-height:1.08;font-weight:800;letter-spacing:-.03em}.diagram{width:54px;height:44px;border:1px solid rgba(255,255,255,.07);border-radius:14px;background:rgba(255,255,255,.035);display:grid;place-items:center}svg{width:48px;height:36px}.arc{fill:none;stroke:var(--family);stroke-width:3;stroke-linecap:round}.arc2{fill:none;stroke:#dbeafe;stroke-width:2.2;stroke-linecap:round;opacity:.55}.dot{fill:#f8fafc;opacity:.9}.desc{color:var(--soft);font-size:13px;line-height:1.38;margin:9px 0}.deps{font-size:12px;color:var(--muted);margin-bottom:10px}.deps b{color:#e2e8f0}.lanes{display:grid;gap:8px}.lane{display:grid;grid-template-columns:78px 1fr 26px;gap:9px;align-items:center}.lane-label{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.segments{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}.seg{height:28px;border-radius:9px;background:rgba(148,163,184,.13);border:1px solid rgba(255,255,255,.06);cursor:pointer}.seg.active{background:var(--family);border-color:transparent}.level{font-size:12px;color:var(--muted);text-align:right}.tree{display:grid;gap:12px}.tree-block{border:1px solid var(--line);border-radius:var(--radius);background:rgba(17,26,43,.76);padding:14px}.tree-block h2{margin:0 0 10px;font-size:18px}.nodes{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.node{border:1px solid var(--line);background:rgba(255,255,255,.06);border-radius:999px;padding:8px 10px;color:var(--soft);font-size:12px}.node.done{background:rgba(34,197,94,.16);border-color:rgba(34,197,94,.35)}.arrow{color:var(--muted)}@media(min-width:760px){.page{padding:32px 20px 72px}.hero{display:grid;grid-template-columns:1fr 320px;gap:24px;align-items:end}h1{font-size:64px}.stats{margin:0}.topbar{grid-template-columns:1fr auto;align-items:center}.search{max-width:360px}.legend{grid-template-columns:repeat(5,1fr)}.grid{grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px}.modes{display:flex}.card{padding:16px}.lane{grid-template-columns:92px 1fr 30px}.seg{height:22px}}
+</style>
 </head>
 <body>
-<!-- unchanged body omitted for brevity in this commit -->
+<div class="page">
+  <section class="hero">
+    <div><h1>Juggle Tracker</h1><div class="subtitle">Mobile-first карта паттернов: отмечай прогресс по шкале 1–5, отдельно по сторонам и направлениям там, где это отдельный навык.</div></div>
+    <div class="stats"><div class="stat"><strong id="done">0</strong><span>готово</span></div><div class="stat"><strong id="started">0</strong><span>начато</span></div><div class="stat"><strong id="total">0</strong><span>всего</span></div></div>
+  </section>
+  <section class="topbar"><input class="search" id="search" placeholder="Поиск паттерна..."/><div class="modes"><button class="active" data-view="cards">Карточки</button><button data-view="tree">Дерево</button></div></section>
+  <nav class="scroll-chips" id="filters"></nav>
+  <section class="legend"><div>1 — пробовал</div><div>2 — 3 повторения</div><div>3 — 10 повторений</div><div>4 — стабильно с фокусом</div><div>5 — автоматизм</div></section>
+  <main id="app"></main>
+</div>
 <script>
-const patterns = [
-{ id: 'cascade-3', name: '3 Ball Cascade', branch: 'Cascade', type: 'single', deps: [], description: 'Базовый перекрёстный паттерн. Основа почти всего дальнейшего.' },
-{ id: 'reverse-cascade', name: 'Reverse Cascade', branch: 'Cascade', type: 'single', deps: ['cascade-3'], description: 'Каскад наоборот: броски идут снаружи внутрь. Меняет механику кистей.' },
-{ id: 'tennis', name: 'Tennis', branch: 'Cascade', type: 'single', deps: ['cascade-3'], description: 'Один мяч летит высокой дугой поверх обычного каскада. Тренирует высоту и ритм.' }
+const levels=[1,2,3,4,5];
+const storageKey='juggle-tracker-v5';
+const colors={Cascade:'#f59e0b',Shower:'#38bdf8',Columns:'#a78bfa',Flow:'#f472b6','4 Ball Prep':'#22c55e','4 Ball':'#14b8a6','5 Ball':'#fb7185','Body Throws':'#e2e8f0'};
+const patterns=[
+{id:'cascade-3',name:'3 Ball Cascade',branch:'Cascade',type:'single',deps:[],diagram:'cascade',description:'Базовый перекрёстный паттерн.'},
+{id:'reverse-cascade',name:'Reverse Cascade',branch:'Cascade',type:'single',deps:['cascade-3'],diagram:'reverse',description:'Каскад наоборот: броски снаружи внутрь.'},
+{id:'tennis',name:'Tennis',branch:'Cascade',type:'single',deps:['cascade-3'],diagram:'tennis',description:'Один мяч летит дугой поверх каскада.'},
+{id:'half-shower',name:'Half Shower',branch:'Shower',type:'directional',lanes:['clockwise','counterclockwise'],deps:['cascade-3'],diagram:'shower',description:'Одна рука бросает выше, другая ниже.'},
+{id:'full-shower',name:'Full Shower',branch:'Shower',type:'directional',lanes:['clockwise','counterclockwise'],deps:['half-shower'],diagram:'shower',description:'Все мячи движутся по кругу.'},
+{id:'shuffle',name:'Shuffle',branch:'Shower',type:'directional',lanes:['left','right'],deps:['half-shower'],diagram:'shower',description:'Потоковый паттерн с быстрыми переносами.'},
+{id:'columns',name:'Columns',branch:'Columns',type:'single',deps:['cascade-3'],diagram:'columns',description:'Три почти вертикальные траектории.'},
+{id:'fake-columns',name:'Fake Columns',branch:'Columns',type:'directional',lanes:['left','right'],deps:['columns'],diagram:'columns',description:'Иллюзия колонок с обманным движением.'},
+{id:'box',name:'Box',branch:'Columns',type:'directional',lanes:['left','right'],deps:['columns'],diagram:'box',description:'Две вертикали и быстрый горизонтальный перенос.'},
+{id:'factory',name:'Factory',branch:'Columns',type:'directional',lanes:['left','right'],deps:['columns'],diagram:'box',description:'Одна рука держит столб, другая вращает два мяча.'},
+{id:'windmill',name:'Windmill',branch:'Flow',type:'directional',lanes:['left','right'],deps:['reverse-cascade'],diagram:'flow',description:'Круговые движения рук, подготовка к Mills Mess.'},
+{id:'mills-mess',name:'Mills Mess',branch:'Flow',type:'directional',lanes:['left','right'],deps:['windmill'],diagram:'flow',description:'Классический flow-паттерн со скрещиванием рук.'},
+{id:'two-one-columns',name:'2 in One Hand Columns',branch:'4 Ball Prep',type:'handed',lanes:['left','right'],deps:['cascade-3'],diagram:'columns',description:'Два мяча в одной руке вертикальными бросками.'},
+{id:'two-one-clockwise',name:'2 in One Hand Clockwise',branch:'4 Ball Prep',type:'handed',lanes:['left','right'],deps:['two-one-columns'],diagram:'circle',description:'Два мяча в одной руке с вращением по часовой.'},
+{id:'two-one-counterclockwise',name:'2 in One Hand Counterclockwise',branch:'4 Ball Prep',type:'handed',lanes:['left','right'],deps:['two-one-columns'],diagram:'circle',description:'Два мяча в одной руке против часовой.'},
+{id:'4-fountain',name:'4 Ball Fountain',branch:'4 Ball',type:'single',deps:['two-one-columns'],diagram:'fountain',description:'Базовая жонглировка четырьмя мячами.'},
+{id:'4-sync-fountain',name:'Synchronous Fountain',branch:'4 Ball',type:'directional',lanes:['clockwise','counterclockwise'],deps:['4-fountain'],diagram:'fountain',description:'Обе руки бросают одновременно; направление отдельно.'},
+{id:'4-async-fountain',name:'Asynchronous Fountain',branch:'4 Ball',type:'single',deps:['4-fountain'],diagram:'fountain',description:'Руки работают со сдвигом по времени.'},
+{id:'5-flash',name:'5 Ball Flash',branch:'5 Ball',type:'single',deps:['cascade-3'],diagram:'cascade',description:'Все 5 мячей выброшены и пойманы по разу.'},
+{id:'5-cascade',name:'5 Ball Cascade',branch:'5 Ball',type:'single',deps:['5-flash'],diagram:'cascade',description:'Базовый устойчивый паттерн на 5 мячей.'},
+{id:'over-shoulder',name:'Over the Shoulder Throw',branch:'Body Throws',type:'directional',lanes:['left','right'],deps:['cascade-3'],diagram:'body',description:'Бросок через плечо. Optional-ветка.'}
 ];
+let state=JSON.parse(localStorage.getItem(storageKey)||'{}');let branch='All';let view='cards';let q='';
+const $=id=>document.getElementById(id);const lanes=p=>p.type==='single'?['progress']:p.lanes;const key=(p,l)=>`${p.id}:${l}`;const lvl=(p,l)=>state[key(p,l)]||0;function setLvl(id,l,n){const p=patterns.find(x=>x.id===id),k=key(p,l);state[k]=state[k]===n?n-1:n;if(state[k]<=0)delete state[k];localStorage.setItem(storageKey,JSON.stringify(state));render()}function done(p){return lanes(p).every(l=>lvl(p,l)>=5)}function started(p){return lanes(p).some(l=>lvl(p,l)>0)}function depNames(p){return p.deps.length?p.deps.map(id=>patterns.find(x=>x.id===id)?.name||id).join(', '):'—'}function diagram(t){const common='<circle class="dot" cx="16" cy="30" r="3"/><circle class="dot" cx="28" cy="8" r="3"/><circle class="dot" cx="40" cy="30" r="3"/>';if(t==='columns')return`<svg viewBox="0 0 56 40"><path class="arc" d="M16 34V6"/><path class="arc2" d="M28 34V6"/><path class="arc" d="M40 34V6"/>${common}</svg>`;if(t==='box')return`<svg viewBox="0 0 56 40"><path class="arc" d="M14 34V6"/><path class="arc" d="M42 34V6"/><path class="arc2" d="M16 30C25 36 32 36 40 30"/>${common}</svg>`;if(t==='shower'||t==='circle')return`<svg viewBox="0 0 56 40"><path class="arc" d="M12 30C24 2 39 2 45 30"/><path class="arc2" d="M44 31C34 38 21 38 12 31"/>${common}</svg>`;if(t==='fountain')return`<svg viewBox="0 0 56 40"><path class="arc" d="M18 32C8 10 28 5 24 31"/><path class="arc2" d="M38 32C48 10 28 5 32 31"/>${common}</svg>`;return`<svg viewBox="0 0 56 40"><path class="arc" d="M12 30C20 4 36 4 44 30"/><path class="arc2" d="M44 30C36 10 20 10 12 30"/>${common}</svg>`}
+function filtered(){return patterns.filter(p=>(branch==='All'||p.branch===branch)&&(!q||`${p.name} ${p.description}`.toLowerCase().includes(q.toLowerCase())))}function renderFilters(){const bs=['All',...new Set(patterns.map(p=>p.branch))];$('filters').innerHTML=bs.map(b=>`<button class="${b===branch?'active':''}" onclick="branch='${b}';render()">${b}</button>`).join('')}function renderStats(){$('done').textContent=patterns.filter(done).length;$('started').textContent=patterns.filter(started).length;$('total').textContent=patterns.length}function renderSegs(p,l){return`<div class="segments">${levels.map(n=>`<button class="seg ${lvl(p,l)>=n?'active':''}" aria-label="${p.name} ${l} level ${n}" onclick="setLvl('${p.id}','${l}',${n})"></button>`).join('')}</div>`}function renderCards(){$('app').innerHTML=`<div class="grid">${filtered().map(p=>`<article class="card ${done(p)?'done':''}" style="--family:${colors[p.branch]||'#64748b'}"><div class="head"><div><div class="branch">${p.branch}</div><div class="name">${p.name}</div></div><div class="diagram">${diagram(p.diagram)}</div></div><div class="desc">${p.description}</div><div class="deps">После: <b>${depNames(p)}</b></div><div class="lanes">${lanes(p).map(l=>`<div class="lane"><div class="lane-label">${l}</div>${renderSegs(p,l)}<div class="level">${lvl(p,l)}/5</div></div>`).join('')}</div></article>`).join('')}</div>`}function renderTree(){const bs=[...new Set(patterns.map(p=>p.branch))];$('app').innerHTML=`<div class="tree">${bs.map(b=>`<section class="tree-block"><h2>${b}</h2><div class="nodes">${patterns.filter(p=>p.branch===b).map((p,i)=>`${i?'<span class="arrow">→</span>':''}<span class="node ${started(p)?'done':''}">${p.name}</span>`).join('')}</div></section>`).join('')}</div>`}function render(){renderFilters();renderStats();view==='tree'?renderTree():renderCards();document.querySelectorAll('[data-view]').forEach(btn=>btn.classList.toggle('active',btn.dataset.view===view))}
+$('search').addEventListener('input',e=>{q=e.target.value;render()});document.querySelectorAll('[data-view]').forEach(btn=>btn.addEventListener('click',()=>{view=btn.dataset.view;render()}));render();
 </script>
 </body>
 </html>
