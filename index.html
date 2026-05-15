@@ -5,147 +5,457 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Juggle Tracker</title>
   <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #121a2b;
+      --panel2: #182338;
+      --line: #28364f;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #f59e0b;
+      --accent2: #38bdf8;
+      --good: #22c55e;
+      --radius: 20px;
+    }
+
+    * { box-sizing: border-box; }
+
     body {
       margin: 0;
-      padding: 32px;
-      background: #0f172a;
-      color: #f8fafc;
-      font-family: Inter, system-ui, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(56, 189, 248, .16), transparent 34rem),
+        radial-gradient(circle at top right, rgba(245, 158, 11, .13), transparent 30rem),
+        var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .page {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 32px 20px 56px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 20px;
+      align-items: end;
+      margin-bottom: 24px;
     }
 
     h1 {
-      margin-bottom: 8px;
+      margin: 0 0 8px;
+      font-size: clamp(34px, 6vw, 64px);
+      line-height: .92;
+      letter-spacing: -.06em;
     }
 
     .subtitle {
-      color: #94a3b8;
-      margin-bottom: 32px;
+      max-width: 760px;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 15px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 110px);
+      gap: 10px;
+    }
+
+    .stat {
+      background: rgba(18, 26, 43, .82);
+      border: 1px solid rgba(255,255,255,.07);
+      border-radius: 18px;
+      padding: 12px;
+      box-shadow: 0 18px 40px rgba(0,0,0,.2);
+    }
+
+    .stat strong { display: block; font-size: 26px; }
+    .stat span { color: var(--muted); font-size: 12px; }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      background: rgba(18, 26, 43, .82);
+      border: 1px solid rgba(255,255,255,.07);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin-bottom: 16px;
+    }
+
+    .filters { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    button {
+      border: 1px solid rgba(255,255,255,.08);
+      background: var(--panel2);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 9px 13px;
+      cursor: pointer;
+      font: inherit;
+      font-size: 13px;
+    }
+
+    button.active {
+      background: var(--accent);
+      border-color: transparent;
+      color: #111827;
+    }
+
+    button.secondary.active {
+      background: var(--accent2);
+    }
+
+    input {
+      min-width: min(100%, 260px);
+      background: var(--panel2);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 999px;
+      padding: 11px 14px;
+      outline: none;
+      font: inherit;
+      font-size: 14px;
+    }
+
+    .legend {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 8px;
+      margin-bottom: 16px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .legend div {
+      background: rgba(18, 26, 43, .58);
+      border: 1px solid rgba(255,255,255,.06);
+      border-radius: 14px;
+      padding: 10px 12px;
     }
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 14px;
     }
 
     .card {
-      background: #1e293b;
-      border-radius: 18px;
-      padding: 18px;
-      border: 1px solid #334155;
+      background: linear-gradient(180deg, rgba(24,35,56,.96), rgba(16,24,39,.96));
+      border: 1px solid rgba(255,255,255,.075);
+      border-radius: var(--radius);
+      padding: 16px;
+      min-height: 230px;
+      box-shadow: 0 16px 34px rgba(0,0,0,.18);
+    }
+
+    .card.done { border-color: rgba(34,197,94,.45); }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 10px;
     }
 
     .branch {
-      font-size: 12px;
-      color: #94a3b8;
-      margin-bottom: 8px;
+      font-size: 11px;
+      color: var(--muted);
       text-transform: uppercase;
-      letter-spacing: 0.08em;
+      letter-spacing: .11em;
+      margin-bottom: 6px;
     }
 
     .title {
       font-size: 20px;
-      font-weight: 600;
+      line-height: 1.1;
+      font-weight: 750;
+      letter-spacing: -.025em;
+    }
+
+    .type {
+      flex: 0 0 auto;
+      font-size: 11px;
+      padding: 5px 8px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, .16);
+      color: #bae6fd;
+      border: 1px solid rgba(56, 189, 248, .2);
+    }
+
+    .description {
+      color: #cbd5e1;
+      font-size: 13px;
+      line-height: 1.45;
+      min-height: 38px;
+      margin-bottom: 10px;
+    }
+
+    .deps {
+      color: var(--muted);
+      font-size: 12px;
+      min-height: 18px;
+      margin-bottom: 10px;
+    }
+
+    .deps b { color: #e2e8f0; font-weight: 600; }
+
+    .lane {
+      margin-top: 9px;
+    }
+
+    .lane-label {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 5px;
     }
 
     .stars {
       display: flex;
-      gap: 8px;
-      margin-top: 16px;
+      gap: 7px;
+      align-items: center;
     }
 
     .star {
-      width: 38px;
-      height: 38px;
+      width: 32px;
+      height: 32px;
       border-radius: 10px;
-      background: #334155;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: 0.15s;
-      user-select: none;
-      font-size: 18px;
-    }
-
-    .star.active {
-      background: #f59e0b;
-      color: black;
-    }
-
-    .legend {
-      margin-top: 40px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.08);
       display: grid;
+      place-items: center;
+      cursor: pointer;
+      color: rgba(255,255,255,.28);
+      user-select: none;
+      transition: .12s ease;
+    }
+
+    .star:hover { transform: translateY(-1px); }
+    .star.active { background: var(--accent); border-color: transparent; color: #111827; }
+
+    .tree {
+      display: grid;
+      gap: 12px;
+    }
+
+    .tree-family {
+      background: rgba(18, 26, 43, .82);
+      border: 1px solid rgba(255,255,255,.07);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+
+    .tree-family h2 { margin: 0 0 10px; font-size: 18px; }
+
+    .nodes {
+      display: flex;
       gap: 8px;
-      color: #cbd5e1;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .node {
+      padding: 9px 11px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.08);
+      color: #e2e8f0;
+      font-size: 13px;
+    }
+
+    .node.done { background: rgba(34,197,94,.18); border-color: rgba(34,197,94,.32); }
+    .arrow { color: var(--muted); }
+
+    @media (max-width: 760px) {
+      header { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: repeat(3, 1fr); }
     }
   </style>
 </head>
 <body>
-  <h1>Juggle Tracker</h1>
-  <div class="subtitle">
-    Prototype of personal juggling progression tracker.
-  </div>
+  <div class="page">
+    <header>
+      <div>
+        <h1>Juggle Tracker</h1>
+        <div class="subtitle">Личная карта паттернов: 3 мяча, база 4 мячей, первые цели на 5 мячей и optional body throws. Прогресс хранится только в браузере.</div>
+      </div>
+      <div class="stats">
+        <div class="stat"><strong id="statDone">0</strong><span>готово</span></div>
+        <div class="stat"><strong id="statStarted">0</strong><span>начато</span></div>
+        <div class="stat"><strong id="statTotal">0</strong><span>навыков</span></div>
+      </div>
+    </header>
 
-  <div class="grid" id="grid"></div>
+    <div class="toolbar">
+      <div class="filters" id="branchFilters"></div>
+      <input id="search" placeholder="Поиск паттерна..." />
+      <div class="filters">
+        <button class="secondary active" data-view="cards">Карточки</button>
+        <button class="secondary" data-view="tree">Дерево</button>
+      </div>
+    </div>
 
-  <div class="legend">
-    <div>★1 — tried</div>
-    <div>★2 — 10 catches</div>
-    <div>★3 — 30 seconds</div>
-    <div>★4 — stable</div>
+    <div class="legend">
+      <div>★1 — пробовал</div>
+      <div>★2 — 3 повторения</div>
+      <div>★3 — 10 повторений</div>
+      <div>★4 — стабильно с фокусом</div>
+      <div>★5 — автоматизм</div>
+    </div>
+
+    <main id="app"></main>
   </div>
 
   <script>
+    const levels = [1,2,3,4,5];
+    const storageKey = 'juggle-tracker-v2';
+
     const patterns = [
-      { name: '3 Ball Cascade', branch: 'Cascade' },
-      { name: 'Reverse Cascade', branch: 'Cascade' },
-      { name: 'Half Shower Left', branch: 'Shower' },
-      { name: 'Half Shower Right', branch: 'Shower' },
-      { name: '3 Ball Shower', branch: 'Shower' },
-      { name: 'Columns', branch: 'Columns' },
-      { name: 'Box', branch: 'Columns' },
-      { name: 'Mills Mess', branch: 'Flow' },
-      { name: '4 Ball Fountain', branch: '4 Ball' },
-      { name: '5 Ball Cascade', branch: '5 Ball' }
+      { id: 'cascade-3', name: '3 Ball Cascade', branch: 'Cascade', type: 'single', deps: [], description: 'Базовый перекрёстный паттерн. Основа почти всего дальнейшего.' },
+      { id: 'reverse-cascade', name: 'Reverse Cascade', branch: 'Cascade', type: 'single', deps: ['cascade-3'], description: 'Каскад наоборот: броски идут снаружи внутрь. Меняет механику кистей.' },
+      { id: 'tennis', name: 'Tennis', branch: 'Cascade', type: 'directional', lanes: ['over left', 'over right'], deps: ['cascade-3'], description: 'Один мяч летит высокой дугой поверх обычного каскада. Тренирует высоту и ритм.' },
+
+      { id: 'half-shower', name: 'Half Shower', branch: 'Shower', type: 'directional', lanes: ['clockwise', 'counterclockwise'], deps: ['cascade-3'], description: 'Одна рука бросает выше, другая делает быстрые низкие передачи.' },
+      { id: 'full-shower', name: 'Full Shower', branch: 'Shower', type: 'directional', lanes: ['clockwise', 'counterclockwise'], deps: ['half-shower'], description: 'Все мячи движутся по кругу в одном направлении.' },
+      { id: 'shuffle', name: 'Shuffle', branch: 'Shower', type: 'directional', lanes: ['left', 'right'], deps: ['half-shower'], description: 'Потоковый паттерн с ощущением быстрых переносов и кругового ритма.' },
+
+      { id: 'columns', name: 'Columns', branch: 'Columns', type: 'single', deps: ['cascade-3'], description: 'Три почти вертикальные траектории. Учит независимости рук.' },
+      { id: 'fake-columns', name: 'Fake Columns', branch: 'Columns', type: 'directional', lanes: ['left', 'right'], deps: ['columns'], description: 'Иллюзия колонок с обманным движением рук.' },
+      { id: 'box', name: 'Box', branch: 'Columns', type: 'directional', lanes: ['left', 'right'], deps: ['columns'], description: 'Два вертикальных мяча и быстрый горизонтальный перенос.' },
+      { id: 'factory', name: 'Factory', branch: 'Columns', type: 'directional', lanes: ['left', 'right'], deps: ['columns'], description: 'Одна рука держит столб, другая вращает два мяча вокруг него.' },
+
+      { id: 'windmill', name: 'Windmill', branch: 'Flow', type: 'directional', lanes: ['left', 'right'], deps: ['reverse-cascade'], description: 'Круговые движения рук с бросками под рукой. Хорошая подготовка к Mills Mess.' },
+      { id: 'mills-mess', name: 'Mills Mess', branch: 'Flow', type: 'directional', lanes: ['left', 'right'], deps: ['windmill'], description: 'Классический flow-паттерн со скрещиванием рук.' },
+
+      { id: 'two-one-columns-right', name: '2 in One Hand Columns', branch: '4 Ball Prep', type: 'handed', lanes: ['right'], deps: ['cascade-3'], description: 'Два мяча в одной руке вертикальными бросками.' },
+      { id: 'two-one-columns-left', name: '2 in One Hand Columns', branch: '4 Ball Prep', type: 'handed', lanes: ['left'], deps: ['cascade-3'], description: 'То же для левой руки. Важно не прятать слабую сторону.' },
+      { id: 'two-one-clockwise-right', name: '2 in One Hand Clockwise', branch: '4 Ball Prep', type: 'handed', lanes: ['right'], deps: ['two-one-columns-right'], description: 'Два мяча в правой руке с вращением по часовой.' },
+      { id: 'two-one-counter-right', name: '2 in One Hand Counterclockwise', branch: '4 Ball Prep', type: 'handed', lanes: ['right'], deps: ['two-one-columns-right'], description: 'Два мяча в правой руке с вращением против часовой.' },
+      { id: 'two-one-clockwise-left', name: '2 in One Hand Clockwise', branch: '4 Ball Prep', type: 'handed', lanes: ['left'], deps: ['two-one-columns-left'], description: 'Два мяча в левой руке с вращением по часовой.' },
+      { id: 'two-one-counter-left', name: '2 in One Hand Counterclockwise', branch: '4 Ball Prep', type: 'handed', lanes: ['left'], deps: ['two-one-columns-left'], description: 'Два мяча в левой руке с вращением против часовой.' },
+      { id: '4-fountain', name: '4 Ball Fountain', branch: '4 Ball', type: 'single', deps: ['two-one-columns-right', 'two-one-columns-left'], description: 'Базовая жонглировка четырьмя мячами.' },
+      { id: '4-sync-fountain', name: 'Synchronous Fountain', branch: '4 Ball', type: 'single', deps: ['4-fountain'], description: 'Обе руки бросают одновременно.' },
+      { id: '4-async-fountain', name: 'Asynchronous Fountain', branch: '4 Ball', type: 'single', deps: ['4-fountain'], description: 'Руки работают со сдвигом по времени.' },
+
+      { id: '5-flash', name: '5 Ball Flash', branch: '5 Ball', type: 'single', deps: ['cascade-3'], description: 'Все 5 мячей выброшены и пойманы по одному разу.' },
+      { id: '5-cascade', name: '5 Ball Cascade', branch: '5 Ball', type: 'single', deps: ['5-flash'], description: 'Базовый устойчивый паттерн на 5 мячей.' },
+
+      { id: 'over-shoulder', name: 'Over the Shoulder Throw', branch: 'Body Throws', type: 'directional', lanes: ['left', 'right'], deps: ['cascade-3'], description: 'Бросок через плечо. Пока optional-ветка.' }
     ];
 
-    const storageKey = 'juggle-tracker-state';
     let state = JSON.parse(localStorage.getItem(storageKey) || '{}');
+    let activeBranch = 'All';
+    let activeView = 'cards';
+    let search = '';
 
-    function save() {
-      localStorage.setItem(storageKey, JSON.stringify(state));
+    function lanes(pattern) {
+      return pattern.type === 'single' ? ['main'] : pattern.lanes;
     }
 
-    function setLevel(name, level) {
-      state[name] = state[name] === level ? level - 1 : level;
-      save();
+    function key(pattern, lane) {
+      return `${pattern.id}:${lane}`;
+    }
+
+    function getLevel(pattern, lane) {
+      return state[key(pattern, lane)] || 0;
+    }
+
+    function setLevel(patternId, lane, level) {
+      const pattern = patterns.find(p => p.id === patternId);
+      const k = key(pattern, lane);
+      state[k] = state[k] === level ? level - 1 : level;
+      if (state[k] <= 0) delete state[k];
+      localStorage.setItem(storageKey, JSON.stringify(state));
       render();
     }
 
-    function render() {
-      const grid = document.getElementById('grid');
-
-      grid.innerHTML = patterns.map(pattern => {
-        const level = state[pattern.name] || 0;
-
-        return `
-          <div class="card">
-            <div class="branch">${pattern.branch}</div>
-            <div class="title">${pattern.name}</div>
-
-            <div class="stars">
-              ${[1,2,3,4].map(i => `
-                <div
-                  class="star ${level >= i ? 'active' : ''}"
-                  onclick="setLevel('${pattern.name}', ${i})"
-                >★</div>
-              `).join('')}
-            </div>
-          </div>
-        `;
-      }).join('');
+    function isDone(pattern) {
+      return lanes(pattern).every(lane => getLevel(pattern, lane) >= 5);
     }
+
+    function isStarted(pattern) {
+      return lanes(pattern).some(lane => getLevel(pattern, lane) > 0);
+    }
+
+    function branchList() {
+      return ['All', ...new Set(patterns.map(p => p.branch))];
+    }
+
+    function visiblePatterns() {
+      return patterns.filter(p => {
+        const byBranch = activeBranch === 'All' || p.branch === activeBranch;
+        const bySearch = !search || p.name.toLowerCase().includes(search.toLowerCase()) || p.description.toLowerCase().includes(search.toLowerCase());
+        return byBranch && bySearch;
+      });
+    }
+
+    function renderFilters() {
+      const root = document.getElementById('branchFilters');
+      root.innerHTML = branchList().map(branch => `<button class="${branch === activeBranch ? 'active' : ''}" onclick="activeBranch='${branch}'; render();">${branch}</button>`).join('');
+    }
+
+    function renderStats() {
+      document.getElementById('statDone').textContent = patterns.filter(isDone).length;
+      document.getElementById('statStarted').textContent = patterns.filter(isStarted).length;
+      document.getElementById('statTotal').textContent = patterns.length;
+    }
+
+    function depNames(pattern) {
+      if (!pattern.deps.length) return '—';
+      return pattern.deps.map(id => patterns.find(p => p.id === id)?.name || id).join(', ');
+    }
+
+    function renderStars(pattern, lane) {
+      return `<div class="stars">${levels.map(level => `<div class="star ${getLevel(pattern, lane) >= level ? 'active' : ''}" onclick="setLevel('${pattern.id}', '${lane}', ${level})">★</div>`).join('')}</div>`;
+    }
+
+    function renderCards() {
+      const cards = visiblePatterns().map(pattern => `
+        <article class="card ${isDone(pattern) ? 'done' : ''}">
+          <div class="card-top">
+            <div>
+              <div class="branch">${pattern.branch}</div>
+              <div class="title">${pattern.name}</div>
+            </div>
+            <div class="type">${pattern.type}</div>
+          </div>
+          <div class="description">${pattern.description}</div>
+          <div class="deps">Зависимости: <b>${depNames(pattern)}</b></div>
+          ${lanes(pattern).map(lane => `
+            <div class="lane">
+              <div class="lane-label">${lane === 'main' ? 'progress' : lane}</div>
+              ${renderStars(pattern, lane)}
+            </div>
+          `).join('')}
+        </article>
+      `).join('');
+
+      document.getElementById('app').innerHTML = `<div class="grid">${cards}</div>`;
+    }
+
+    function renderTree() {
+      const groups = branchList().filter(b => b !== 'All');
+      document.getElementById('app').innerHTML = `<div class="tree">${groups.map(branch => {
+        const branchPatterns = patterns.filter(p => p.branch === branch);
+        return `<section class="tree-family"><h2>${branch}</h2><div class="nodes">${branchPatterns.map((p, index) => `${index ? '<span class="arrow">→</span>' : ''}<span class="node ${isStarted(p) ? 'done' : ''}">${p.name}</span>`).join('')}</div></section>`;
+      }).join('')}</div>`;
+    }
+
+    function render() {
+      renderFilters();
+      renderStats();
+      if (activeView === 'tree') renderTree(); else renderCards();
+      document.querySelectorAll('[data-view]').forEach(btn => btn.classList.toggle('active', btn.dataset.view === activeView));
+    }
+
+    document.getElementById('search').addEventListener('input', e => { search = e.target.value; render(); });
+    document.querySelectorAll('[data-view]').forEach(btn => btn.addEventListener('click', () => { activeView = btn.dataset.view; render(); }));
 
     render();
   </script>
