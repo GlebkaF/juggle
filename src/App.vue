@@ -6,6 +6,7 @@ const storageKey = 'juggle-tracker-vue-v1';
 const view = ref('cards');
 const branch = ref('All');
 const query = ref('');
+const state = ref(JSON.parse(localStorage.getItem(storageKey) || '{}'));
 
 const colors = {
   Cascade: '#ffb11f',
@@ -41,27 +42,23 @@ const patterns = [
   { id: 'over-shoulder', name: 'Over the Shoulder Throw', branch: 'Body Throws', type: 'directional', lanes: ['left', 'right'], deps: ['cascade-3'], diagram: 'shoulder', description: 'Бросок через плечо. Optional-ветка.' },
 ];
 
-const state = ref(JSON.parse(localStorage.getItem(storageKey) || '{}'));
 const branches = computed(() => ['All', ...new Set(patterns.map((p) => p.branch))]);
-
-const lanesOf = (pattern) => (pattern.type === 'single' ? ['progress'] : pattern.lanes);
-const keyOf = (pattern, lane) => `${pattern.id}:${lane}`;
-const levelOf = (pattern, lane) => state.value[keyOf(pattern, lane)] || 0;
-const isStarted = (pattern) => lanesOf(pattern).some((lane) => levelOf(pattern, lane) > 0);
-const isDone = (pattern) => lanesOf(pattern).every((lane) => levelOf(pattern, lane) >= 5);
-const isLearning = (pattern) => isStarted(pattern) && !isDone(pattern);
-const average = (pattern) => lanesOf(pattern).reduce((sum, lane) => sum + levelOf(pattern, lane), 0) / lanesOf(pattern).length;
-const isUnlocked = (pattern) => pattern.deps.every((id) => isStarted(patterns.find((p) => p.id === id)));
-
-const visiblePatterns = computed(() => patterns.filter((pattern) => {
-  const branchOk = branch.value === 'All' || pattern.branch === branch.value;
-  const searchOk = !query.value || `${pattern.name} ${pattern.description}`.toLowerCase().includes(query.value.toLowerCase());
-  return branchOk && searchOk;
-}));
-
-const visibleBranches = computed(() => branches.value.filter((name) => name !== 'All' && (branch.value === 'All' || branch.value === name)));
+const visibleBranches = computed(() => branches.value.filter((b) => b !== 'All' && (branch.value === 'All' || branch.value === b)));
+const visiblePatterns = computed(() => patterns.filter((p) => (branch.value === 'All' || p.branch === branch.value) && (!query.value || `${p.name} ${p.description}`.toLowerCase().includes(query.value.toLowerCase()))));
 const doneCount = computed(() => patterns.filter(isDone).length);
 const startedCount = computed(() => patterns.filter(isStarted).length);
+
+function lanesOf(pattern) { return pattern.type === 'single' ? ['progress'] : pattern.lanes; }
+function keyOf(pattern, lane) { return `${pattern.id}:${lane}`; }
+function levelOf(pattern, lane) { return state.value[keyOf(pattern, lane)] || 0; }
+function isStarted(pattern) { return lanesOf(pattern).some((lane) => levelOf(pattern, lane) > 0); }
+function isDone(pattern) { return lanesOf(pattern).every((lane) => levelOf(pattern, lane) >= 5); }
+function isLearning(pattern) { return isStarted(pattern) && !isDone(pattern); }
+function average(pattern) { return lanesOf(pattern).reduce((sum, lane) => sum + levelOf(pattern, lane), 0) / lanesOf(pattern).length; }
+function isUnlocked(pattern) { return pattern.deps.every((id) => isStarted(patterns.find((p) => p.id === id))); }
+function depName(id) { return patterns.find((p) => p.id === id)?.name || id; }
+function branchPatterns(name) { return visiblePatterns.value.filter((p) => p.branch === name); }
+function branchPercent(items) { return items.length ? Math.round(items.reduce((sum, p) => sum + average(p), 0) / (items.length * 5) * 100) : 0; }
 
 function setLevel(pattern, lane, level) {
   const key = keyOf(pattern, lane);
@@ -70,55 +67,37 @@ function setLevel(pattern, lane, level) {
   localStorage.setItem(storageKey, JSON.stringify(state.value));
 }
 
-function dependencyName(id) {
-  return patterns.find((pattern) => pattern.id === id)?.name || id;
-}
-
-function branchPatterns(name) {
-  return visiblePatterns.value.filter((pattern) => pattern.branch === name);
-}
-
-function branchPercent(items) {
-  if (!items.length) return 0;
-  return Math.round(items.reduce((sum, pattern) => sum + average(pattern), 0) / (items.length * 5) * 100);
-}
-
 const todayItems = computed(() => {
-  const inProgress = patterns.filter((pattern) => isStarted(pattern) && !isDone(pattern)).sort((a, b) => average(b) - average(a));
-  const weak = patterns
-    .filter(isUnlocked)
-    .flatMap((pattern) => lanesOf(pattern).map((lane) => ({ pattern, lane, value: levelOf(pattern, lane) })))
-    .filter((item) => item.value > 0 && item.value < 4)
-    .sort((a, b) => a.value - b.value)[0];
-  const repeat = patterns.filter(isDone).find((pattern) => pattern.id !== 'cascade-3') || patterns.find(isDone);
-  const next = patterns.find((pattern) => !isStarted(pattern) && isUnlocked(pattern));
-
+  const inProgress = patterns.filter((p) => isStarted(p) && !isDone(p)).sort((a, b) => average(b) - average(a));
+  const weak = patterns.filter(isUnlocked).flatMap((p) => lanesOf(p).map((lane) => ({ p, lane, v: levelOf(p, lane) }))).filter((x) => x.v > 0 && x.v < 4).sort((a, b) => a.v - b.v)[0];
+  const repeat = patterns.filter(isDone).find((p) => p.id !== 'cascade-3') || patterns.find(isDone);
+  const next = patterns.find((p) => !isStarted(p) && isUnlocked(p));
   return [
     inProgress[0] && { label: 'Основной', pattern: inProgress[0] },
-    weak && { label: `Слабая сторона · ${weak.lane}`, pattern: weak.pattern },
+    weak && { label: `Слабая сторона · ${weak.lane}`, pattern: weak.p },
     repeat && { label: 'Повторение', pattern: repeat },
     next && { label: 'Следующий доступный', pattern: next },
   ].filter(Boolean);
 });
 
 function iconPaths(type) {
-  const baseBalls = '<circle class="icon-ball" cx="48" cy="102" r="11"/><circle class="icon-ball" cx="120" cy="104" r="11"/><circle class="icon-ball" cx="192" cy="102" r="11"/>';
-  const map = {
-    cascade: '<path class="icon-line" d="M48 102C70 32 111 32 120 104"/><path class="icon-line" d="M192 102C170 32 129 32 120 104"/>',
-    reverse: '<path class="icon-line" d="M72 112C28 40 92 22 124 86"/><path class="icon-line" d="M168 112C212 40 148 22 116 86"/>',
-    tennis: '<path class="icon-line" d="M48 102C70 36 110 36 120 104"/><path class="icon-line" d="M192 102C170 36 130 36 120 104"/><path class="icon-thin" d="M44 96C86 14 156 14 196 96"/>',
-    shower: '<path class="icon-line" d="M50 105C82 20 160 20 190 105"/><path class="icon-thin" d="M190 108C150 130 90 130 50 108"/>',
-    columns: '<path class="icon-line" d="M64 122V36"/><path class="icon-line" d="M120 122V36"/><path class="icon-line" d="M176 122V36"/>',
-    fakecolumns: '<path class="icon-line" d="M64 122V42"/><path class="icon-line" d="M176 122V42"/><path class="icon-thin" d="M82 112C112 92 132 92 162 112"/>',
-    box: '<path class="icon-line" d="M62 122V36"/><path class="icon-line" d="M178 122V36"/><path class="icon-line" d="M72 118C96 132 144 132 168 118"/>',
-    factory: '<path class="icon-line" d="M86 122V36"/><path class="icon-line" d="M128 122C190 116 190 48 128 42"/><path class="icon-thin" d="M128 42C94 54 94 106 128 122"/>',
-    mills: '<path class="icon-line" d="M48 108C84 28 136 132 192 52"/><path class="icon-line" d="M192 108C156 28 104 132 48 52"/>',
-    circle: '<path class="icon-line" d="M88 116C54 52 122 18 152 70"/><path class="icon-line" d="M152 70C184 126 110 140 88 116"/>',
+  const balls3 = '<circle class="icon-ball" cx="48" cy="102" r="11"/><circle class="icon-ball" cx="120" cy="104" r="11"/><circle class="icon-ball" cx="192" cy="102" r="11"/>';
+  const paths = {
+    cascade: '<path class="icon-line" d="M48 102C70 32 111 32 120 104"/><path class="icon-line" d="M192 102C170 32 129 32 120 104"/>' + balls3,
+    reverse: '<path class="icon-line" d="M72 112C28 40 92 22 124 86"/><path class="icon-line" d="M168 112C212 40 148 22 116 86"/>' + balls3,
+    tennis: '<path class="icon-line" d="M48 102C70 36 110 36 120 104"/><path class="icon-line" d="M192 102C170 36 130 36 120 104"/><path class="icon-thin" d="M44 96C86 14 156 14 196 96"/>' + balls3,
+    shower: '<path class="icon-line" d="M50 105C82 20 160 20 190 105"/><path class="icon-thin" d="M190 108C150 130 90 130 50 108"/>' + balls3,
+    columns: '<path class="icon-line" d="M64 122V36"/><path class="icon-line" d="M120 122V36"/><path class="icon-line" d="M176 122V36"/>' + balls3,
+    fakecolumns: '<path class="icon-line" d="M64 122V42"/><path class="icon-line" d="M176 122V42"/><path class="icon-thin" d="M82 112C112 92 132 92 162 112"/>' + balls3,
+    box: '<path class="icon-line" d="M62 122V36"/><path class="icon-line" d="M178 122V36"/><path class="icon-line" d="M72 118C96 132 144 132 168 118"/>' + balls3,
+    factory: '<path class="icon-line" d="M86 122V36"/><path class="icon-line" d="M128 122C190 116 190 48 128 42"/><path class="icon-thin" d="M128 42C94 54 94 106 128 122"/>' + balls3,
+    mills: '<path class="icon-line" d="M48 108C84 28 136 132 192 52"/><path class="icon-line" d="M192 108C156 28 104 132 48 52"/>' + balls3,
+    circle: '<path class="icon-line" d="M88 116C54 52 122 18 152 70"/><path class="icon-line" d="M152 70C184 126 110 140 88 116"/>' + balls3,
     fountain: '<path class="icon-line" d="M82 122C36 44 116 20 102 114"/><path class="icon-line" d="M158 122C204 44 124 20 138 114"/><circle class="icon-ball" cx="82" cy="122" r="10"/><circle class="icon-ball" cx="102" cy="54" r="10"/><circle class="icon-ball" cx="138" cy="54" r="10"/><circle class="icon-ball" cx="158" cy="122" r="10"/>',
     five: '<path class="icon-line" d="M40 112C68 18 114 18 120 112"/><path class="icon-line" d="M200 112C172 18 126 18 120 112"/><circle class="icon-ball" cx="40" cy="112" r="9"/><circle class="icon-ball" cx="80" cy="70" r="9"/><circle class="icon-ball" cx="120" cy="116" r="9"/><circle class="icon-ball" cx="160" cy="70" r="9"/><circle class="icon-ball" cx="200" cy="112" r="9"/>',
-    shoulder: '<path class="icon-soft" d="M88 122C92 88 108 70 120 70C132 70 148 88 152 122"/><path class="icon-line" d="M72 104C72 36 156 24 180 86"/>',
+    shoulder: '<path class="icon-soft" d="M88 122C92 88 108 70 120 70C132 70 148 88 152 122"/><path class="icon-line" d="M72 104C72 36 156 24 180 86"/>' + balls3,
   };
-  return `${map[type] || map.cascade}${['fountain', 'five'].includes(type) ? '' : baseBalls}`;
+  return paths[type] || paths.cascade;
 }
 </script>
 
@@ -144,9 +123,7 @@ function iconPaths(type) {
       </nav>
     </section>
 
-    <section class="scale">
-      <div>1 · проба</div><div>2 · серия</div><div>3 · контроль</div><div>4 · стабильно</div><div>5 · авто</div>
-    </section>
+    <section class="scale"><div>1 · проба</div><div>2 · серия</div><div>3 · контроль</div><div>4 · стабильно</div><div>5 · авто</div></section>
 
     <main v-if="view === 'cards'">
       <section v-for="branchName in visibleBranches" :key="branchName" class="branch">
@@ -155,7 +132,15 @@ function iconPaths(type) {
           <div class="branch-score">{{ branchPercent(branchPatterns(branchName)) }}% · {{ branchPatterns(branchName).filter(isDone).length }}/{{ branchPatterns(branchName).length }}</div>
         </div>
         <div class="grid">
-          <PatternCard v-for="pattern in branchPatterns(branchName)" :key="pattern.id" :pattern="pattern" />
+          <article v-for="pattern in branchPatterns(branchName)" :key="pattern.id" class="card" :class="{ mastered: isDone(pattern), locked: !isUnlocked(pattern) }" :style="{ '--family': colors[pattern.branch] }">
+            <div class="head">
+              <div><div class="label">{{ pattern.branch }}<span v-if="!isUnlocked(pattern)"> · locked</span></div><div class="skill">{{ pattern.name }}<span v-if="isLearning(pattern)" class="star">★</span></div></div>
+              <div class="plate"><svg viewBox="0 0 240 160"><rect class="icon-bg" width="240" height="160" rx="24"/><g v-html="iconPaths(pattern.diagram)"></g></svg></div>
+            </div>
+            <div class="desc">{{ pattern.description }}</div>
+            <div class="deps"><span class="dep-title">{{ pattern.deps.length ? 'После:' : 'Стартовый навык' }}</span><span v-for="dep in pattern.deps" :key="dep" class="dep" :class="{ ok: isStarted(patterns.find(p => p.id === dep)) }">{{ depName(dep) }}</span></div>
+            <div class="lanes"><div v-for="lane in lanesOf(pattern)" :key="lane" class="lane"><div class="lane-name">{{ lane }}</div><div class="meter"><button v-for="level in levels" :key="level" class="seg" :class="{ on: levelOf(pattern, lane) >= level }" @click="setLevel(pattern, lane, level)"></button></div><div class="lvl">{{ levelOf(pattern, lane) }}/5</div></div></div>
+          </article>
         </div>
       </section>
     </main>
@@ -164,7 +149,11 @@ function iconPaths(type) {
       <template v-if="todayItems.length">
         <section v-for="item in todayItems" :key="`${item.label}-${item.pattern.id}`">
           <div class="today-label">{{ item.label }}</div>
-          <PatternCard :pattern="item.pattern" />
+          <article class="card" :class="{ mastered: isDone(item.pattern), locked: !isUnlocked(item.pattern) }" :style="{ '--family': colors[item.pattern.branch] }">
+            <div class="head"><div><div class="label">{{ item.pattern.branch }}</div><div class="skill">{{ item.pattern.name }}<span v-if="isLearning(item.pattern)" class="star">★</span></div></div><div class="plate"><svg viewBox="0 0 240 160"><rect class="icon-bg" width="240" height="160" rx="24"/><g v-html="iconPaths(item.pattern.diagram)"></g></svg></div></div>
+            <div class="desc">{{ item.pattern.description }}</div>
+            <div class="lanes"><div v-for="lane in lanesOf(item.pattern)" :key="lane" class="lane"><div class="lane-name">{{ lane }}</div><div class="meter"><button v-for="level in levels" :key="level" class="seg" :class="{ on: levelOf(item.pattern, lane) >= level }" @click="setLevel(item.pattern, lane, level)"></button></div><div class="lvl">{{ levelOf(item.pattern, lane) }}/5</div></div></div>
+          </article>
         </section>
       </template>
       <div v-else class="empty">Сегодня нечего подсказать.</div>
@@ -178,39 +167,5 @@ function iconPaths(type) {
       </section>
     </main>
   </div>
-
-  <nav class="nav">
-    <button :class="{ active: view === 'cards' }" @click="view = 'cards'">Карта</button>
-    <button :class="{ active: view === 'today' }" @click="view = 'today'">Сегодня</button>
-    <button :class="{ active: view === 'tree' }" @click="view = 'tree'">Дерево</button>
-  </nav>
+  <nav class="nav"><button :class="{ active: view === 'cards' }" @click="view = 'cards'">Карта</button><button :class="{ active: view === 'today' }" @click="view = 'today'">Сегодня</button><button :class="{ active: view === 'tree' }" @click="view = 'tree'">Дерево</button></nav>
 </template>
-
-<script>
-export default {
-  components: {
-    PatternCard: {
-      props: ['pattern'],
-      computed: {
-        color() { return colors[this.pattern.branch]; },
-        lanes() { return lanesOf(this.pattern); },
-      },
-      methods: { levelOf, setLevel, isDone, isLearning, isUnlocked, isStarted, dependencyName, iconPaths },
-      template: `
-        <article class="card" :class="{ mastered: isDone(pattern), locked: !isUnlocked(pattern) }" :style="{ '--family': color }">
-          <div class="head">
-            <div>
-              <div class="label">{{ pattern.branch }}<span v-if="!isUnlocked(pattern)"> · locked</span></div>
-              <div class="skill">{{ pattern.name }}<span v-if="isLearning(pattern)" class="star">★</span></div>
-            </div>
-            <div class="plate"><svg viewBox="0 0 240 160"><rect class="icon-bg" width="240" height="160" rx="24"/><g v-html="iconPaths(pattern.diagram)"></g></svg></div>
-          </div>
-          <div class="desc">{{ pattern.description }}</div>
-          <div class="deps"><span class="dep-title">{{ pattern.deps.length ? 'После:' : 'Стартовый навык' }}</span><span v-for="dep in pattern.deps" :key="dep" class="dep" :class="{ ok: isStarted(patterns.find(p => p.id === dep)) }">{{ dependencyName(dep) }}</span></div>
-          <div class="lanes"><div v-for="lane in lanes" :key="lane" class="lane"><div class="lane-name">{{ lane }}</div><div class="meter"><button v-for="level in levels" :key="level" class="seg" :class="{ on: levelOf(pattern, lane) >= level }" @click="setLevel(pattern, lane, level)"></button></div><div class="lvl">{{ levelOf(pattern, lane) }}/5</div></div></div>
-        </article>
-      `,
-    },
-  },
-};
-</script>
