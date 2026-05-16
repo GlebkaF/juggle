@@ -8,30 +8,30 @@ const props = defineProps({
 });
 
 const nodePositions = {
-  'cascade-3': [50, 8, 'major'],
+  'cascade-3': [50, 110, 'major'],
 
-  'reverse-cascade': [17, 30, 'normal'],
-  tennis: [35, 30, 'normal'],
-  columns: [63, 30, 'normal'],
-  'over-shoulder': [84, 30, 'normal'],
+  'reverse-cascade': [17, 300, 'normal'],
+  tennis: [35, 300, 'normal'],
+  columns: [63, 300, 'normal'],
+  'over-shoulder': [84, 300, 'normal'],
 
-  'mills-mess': [12, 48, 'small'],
-  'full-shower': [30, 51, 'normal'],
-  shuffle: [42, 51, 'normal'],
-  'fake-columns': [55, 51, 'normal'],
-  box: [67, 51, 'normal'],
-  factory: [79, 51, 'normal'],
+  'mills-mess': [12, 500, 'small'],
+  'full-shower': [30, 530, 'normal'],
+  shuffle: [42, 530, 'normal'],
+  'fake-columns': [55, 530, 'normal'],
+  box: [67, 530, 'normal'],
+  factory: [79, 530, 'normal'],
 
-  '5-flash': [12, 74, 'normal'],
-  '5-cascade': [12, 96, 'normal'],
+  '5-flash': [12, 760, 'normal'],
+  '5-cascade': [12, 990, 'normal'],
 
-  'two-one-columns': [52, 78, 'major'],
-  'two-one-clockwise': [38, 104, 'normal'],
-  'two-one-counterclockwise': [62, 104, 'normal'],
+  'two-one-columns': [52, 790, 'major'],
+  'two-one-clockwise': [38, 1070, 'normal'],
+  'two-one-counterclockwise': [62, 1070, 'normal'],
 
-  '4-fountain': [82, 82, 'normal'],
-  '4-sync-fountain': [75, 112, 'normal'],
-  '4-async-fountain': [90, 112, 'normal'],
+  '4-fountain': [82, 830, 'normal'],
+  '4-sync-fountain': [75, 1160, 'normal'],
+  '4-async-fountain': [90, 1160, 'normal'],
 };
 
 const childNodes = {
@@ -73,19 +73,12 @@ const childNodes = {
   ],
 };
 
-const laneLevelProvider = injectLaneLevelProvider();
-
-function injectLaneLevelProvider() {
-  // Compatibility layer. If App.vue later passes levelOf, use it.
-  return null;
-}
-
 const nodes = Object.keys(nodePositions)
   .map((id) => props.patterns.find((pattern) => pattern.id === id))
   .filter(Boolean);
 
 function nodePosition(id) {
-  return nodePositions[id] || [50, 50, 'normal'];
+  return nodePositions[id] || [50, 500, 'normal'];
 }
 
 function nodeRank(pattern) {
@@ -95,7 +88,7 @@ function nodeRank(pattern) {
 }
 
 function nodeStyle(pattern) {
-  const [x, y, size] = nodePosition(pattern.id);
+  const [x, y] = nodePosition(pattern.id);
   return {
     left: `${x}%`,
     top: `${y}px`,
@@ -124,7 +117,7 @@ const edges = nodes.flatMap((pattern) =>
 function edgeLine(edge) {
   const [x1, y1] = nodePosition(edge.from);
   const [x2, y2] = nodePosition(edge.to);
-  return { x1, y1: y1 + 34, x2, y2: y2 + 34 };
+  return { x1, y1, x2, y2 };
 }
 
 function edgeClass(edge) {
@@ -142,7 +135,7 @@ function childStyle(pattern, child, index, total) {
   const offset = index === 0 ? -spread : spread;
   return {
     left: `${x + offset}%`,
-    top: `${y + 78}px`,
+    top: `${y + 120}px`,
     '--node-color': props.colors[pattern.branch] || '#ffb11f',
   };
 }
@@ -159,8 +152,8 @@ function childEdges(pattern, child, index, total) {
   const [x, y] = nodePosition(pattern.id);
   const spread = total === 2 ? 7 : 0;
   const childX = x + (index === 0 ? -spread : spread);
-  const childY = y + 78;
-  return { x1: x, y1: y + 42, x2: childX, y2: childY + 18 };
+  const childY = y + 120;
+  return { x1: x, y1: y + 38, x2: childX, y2: childY - 22 };
 }
 </script>
 
@@ -178,7 +171,7 @@ function childEdges(pattern, child, index, total) {
     </div>
 
     <div class="talent-canvas">
-      <svg class="tree-lines" viewBox="0 0 100 172" preserveAspectRatio="none" aria-hidden="true">
+      <svg class="tree-lines" viewBox="0 0 100 1480" preserveAspectRatio="none" aria-hidden="true">
         <line
           v-for="edge in edges"
           :key="`${edge.from}-${edge.to}`"
