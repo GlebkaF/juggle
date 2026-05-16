@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import { loadProgress, saveProgress } from './storage.js';
+import SkillTree from './SkillTree.vue';
 
 const levels = [1, 2, 3, 4, 5];
 const view = ref('cards');
@@ -165,12 +166,14 @@ function iconPaths(type) {
       <div v-else class="empty">Сегодня нечего подсказать.</div>
     </main>
 
-    <main v-else class="tree">
-      <section v-for="branchName in visibleBranches" :key="branchName" class="tree-card" :style="{ '--family': colors[branchName] }">
-        <div class="tree-top"><b>{{ branchName }}</b><span>{{ branchPercent(branchPatterns(branchName)) }}%</span></div>
-        <div class="bar"><span :style="{ width: `${branchPercent(branchPatterns(branchName))}%` }"></span></div>
-        <div class="nodes"><span v-for="pattern in branchPatterns(branchName)" :key="pattern.id" class="node" :class="{ done: isStarted(pattern) }">{{ pattern.name }}</span></div>
-      </section>
+    <main v-else>
+      <SkillTree
+        :patterns="patterns"
+        :colors="colors"
+        :is-started="isStarted"
+        :is-done="isDone"
+        :is-unlocked="isUnlocked"
+      />
     </main>
   </div>
   <nav class="nav"><button :class="{ active: view === 'cards' }" @click="view = 'cards'">Карта</button><button :class="{ active: view === 'today' }" @click="view = 'today'">Сегодня</button><button :class="{ active: view === 'tree' }" @click="view = 'tree'">Дерево</button></nav>
