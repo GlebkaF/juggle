@@ -1,12 +1,12 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
+import { loadProgress, saveProgress } from './storage.js';
 
 const levels = [1, 2, 3, 4, 5];
-const storageKey = 'juggle-tracker-vue-v1';
 const view = ref('cards');
 const branch = ref('All');
 const query = ref('');
-const state = ref(JSON.parse(localStorage.getItem(storageKey) || '{}'));
+const state = ref({});
 
 const colors = {
   Cascade: '#ffb11f',
@@ -42,6 +42,10 @@ const patterns = [
   { id: 'over-shoulder', name: 'Over the Shoulder Throw', branch: 'Body Throws', type: 'directional', lanes: ['left', 'right'], deps: ['cascade-3'], diagram: 'shoulder', description: 'Бросок через плечо. Optional-ветка.' },
 ];
 
+onMounted(async () => {
+  state.value = await loadProgress();
+});
+
 const branches = computed(() => ['All', ...new Set(patterns.map((p) => p.branch))]);
 const visibleBranches = computed(() => branches.value.filter((b) => b !== 'All' && (branch.value === 'All' || branch.value === b)));
 const visiblePatterns = computed(() => patterns.filter((p) => (branch.value === 'All' || p.branch === branch.value) && (!query.value || `${p.name} ${p.description}`.toLowerCase().includes(query.value.toLowerCase()))));
@@ -60,11 +64,13 @@ function depName(id) { return patterns.find((p) => p.id === id)?.name || id; }
 function branchPatterns(name) { return visiblePatterns.value.filter((p) => p.branch === name); }
 function branchPercent(items) { return items.length ? Math.round(items.reduce((sum, p) => sum + average(p), 0) / (items.length * 5) * 100) : 0; }
 
-function setLevel(pattern, lane, level) {
+async function setLevel(pattern, lane, level) {
   const key = keyOf(pattern, lane);
-  state.value[key] = state.value[key] === level ? level - 1 : level;
-  if (state.value[key] <= 0) delete state.value[key];
-  localStorage.setItem(storageKey, JSON.stringify(state.value));
+  const next = { ...state.value };
+  next[key] = next[key] === level ? level - 1 : level;
+  if (next[key] <= 0) delete next[key];
+  state.value = next;
+  await saveProgress(next);
 }
 
 const todayItems = computed(() => {
@@ -107,7 +113,7 @@ function iconPaths(type) {
       <div>
         <div class="eyebrow">personal skill deck</div>
         <h1 class="title">Juggle<br>Tracker</h1>
-        <div class="sub">Карта паттернов без базы данных. Отмечай уровень 1–5 по сторонам и направлениям там, где это реально отдельный навык.</div>
+        <div class="sub">Карта паттернов без базы данных. Прогресс хранится в IndexedDB с fallback в localStorage.</div>
       </div>
       <div class="stats">
         <div class="stat"><b>{{ doneCount }}</b><span>готово</span></div>
